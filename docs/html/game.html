@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ゲーム</title>
+</head>
+<body>
+    <h1>ゲーム</h1>
+    <div id="question"></div>
+    <div>
+        <input id="typed" type="text" autocomplete="off" style="display: none;"/>
+        <span id="remaining"></span>
+    </div>
+
+    <div id="result" style="display: none;">
+        <h4>結果</h4>
+        <ul>
+            <li id="score">スコア：</li>
+            <li id="wpm">WPM：</li>
+            <li id="accuracy">正打率：</li>
+            <li id="mistakes">誤打数</li>
+            <li id="keymistakes">間違えたキー：</li>
+        </ul>
+    <div>
+    <script type="module" src="../js/game.js"></script>
+</body>
