@@ -7,31 +7,74 @@ export function startGame(data, current, dom_data, score_calculation) {
     current._handleKey = handler;
 }
 
+export async function loadMultiRoMap() { 
+  const response =  await fetch("../data/multi_ro.json"); 
+  const data = await response.json(); 
+  console.log("jsonのデータ：", data)
+  return data; 
+}
+
+export function normalizeRomaji(inputRomaji, multiRoMap, inputFirstChar=null) {
+  let normalized = inputRomaji;
+  for (const kana in multiRoMap) {
+    let variants = [...multiRoMap[kana]];
+    const standard = variants[0];
+
+    if (inputFirstChar) {
+      variants = variants.filter(v => v.startsWith(inputFirstChar))
+    }
+    for (const alt of variants.slice(1)) {
+      const regex = new RegExp(escapeRegex(alt), "g"); // ✅ 正しく alt を使う
+      normalized = normalized.replace(regex, standard);
+    }
+  }
+  return normalized;
+}
+
+function escapeRegex(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export function loadQuestion(data, current, dom_data) {
   console.log("呼び出し時の dom_data:", dom_data);
     current.question = data[current.currentQuestionIndex];
-    current.currentQuestionRomaji = current.question.nameRo;
+    current.currentQuestionRomaji = current.question.nameRo[0];
     current.currentTypedRomaji = "";
-    dom_data.elQuestion.textContent = `${current.question.name} ${current.question.nameKana}`;
+    dom_data.elQuestionName.textContent = `${current.question.name}`;
+    dom_data.elQuestionKana.textContent = `${current.question.nameKana}`
     updateDisplay(current, dom_data);
 }
 
 export function updateDisplay(current, dom_data){
-    dom_data.elTyped.textContent  = current.currentTypedRomaji;
-    dom_data.elRemaining.textContent = current.currentQuestionRomaji.slice(current.currentTypedRomaji.length);
+  const typed = current.currentTypedRomaji;
+
+  // ✅ 最初にマッチする nameRo を探す
+  const matchedRomaji = current.question.nameRo.find(ro => ro.startsWith(typed)) || current.question.nameRo[0];
+
+  const remaining = matchedRomaji.slice(typed.length);
+
+  dom_data.elTyped.textContent = typed;
+  dom_data.elRemaining.textContent = remaining;
 }
 
 
 function onKeydown(e, data, current, score_calculation, dom_data) {
-  // ゲーム開始タイミングをずらさないよう、最初のキーで startTime を確定
   if (!score_calculation.startTime) score_calculation.startTime = Date.now();
 
   const key = e.key;
-  // 英数字と記号のみ処理（１文字入力のみ）
+  // ✅ 無視する文字（記号やスペース）
+  if (key === " " || key === "　") return;
   if (key.length !== 1) return;
 
-  const expectedChar = current.currentQuestionRomaji[current.currentTypedRomaji.length];
-  if (key === expectedChar) {
+  // ✅ 入力を仮に追加してみる
+  const nextTyped = current.currentTypedRomaji + key;
+
+  // ✅ normalizeして判定（multiRoMap は事前に読み込み済みとする）
+  const normalizedInput = normalizeRomaji(nextTyped, current.multiRoMap);
+
+  const matched = current.question.nameRo.find(ro => normalizeRomaji(ro, current.multiRoMap).startsWith(normalizedInput));
+
+  if (matched) {
     current.currentTypedRomaji += key;
     score_calculation.totalCorrectChars++;
   } else {
@@ -39,16 +82,19 @@ function onKeydown(e, data, current, score_calculation, dom_data) {
     score_calculation.keyMistakes[key] = (score_calculation.keyMistakes[key] || 0) + 1;
   }
 
-  updateDisplay(current, dom_data);
 
-  // 問題クリア判定
-  if (current.currentTypedRomaji === current.currentQuestionRomaji) {
+
+  updateDisplay(current, dom_data);
+  // 問題クリア判定（normalizeして比較）
+  const normalizedTyped = normalizeRomaji(current.currentTypedRomaji, current.multiRoMap);
+  const isCorrect = current.question.nameRo.some(ro => normalizeRomaji(ro, current.multiRoMap) === normalizedTyped);
+
+  if (isCorrect) {
     document.removeEventListener("keydown", current._handleKey);
     nextQuestion(data, current, score_calculation, dom_data);
   }
-
-  e.preventDefault();
-}
+    e.preventDefault();
+  }
 
 // #onkeydownを使うためのクロージャ
 function createKeyHandler(data, current, score_calculation, dom_data) {
@@ -80,7 +126,8 @@ function endGame(score_calculation, dom_data) {
 
   // #終了した際の結果を表示
   document.getElementById("result").style.display = "block";
-  dom_data.elQuestion.textContent = "終了";
+  dom_data.elQuestionName.textContent = "終了";
+  dom_data.elQuestionKana.textContent = "しゅうりょう"
 
     // ✅ HTML要素への反映
   document.getElementById("score").textContent      = `スコア：${Math.round(score)}`;

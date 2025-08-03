@@ -1,4 +1,4 @@
-import {startGame} from "./game_function.js"
+import {startGame, loadMultiRoMap, normalizeRomaji} from "./game_function.js"
 
 window.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("message", (event) => {
@@ -10,12 +10,14 @@ window.addEventListener("DOMContentLoaded", () => {
     console.log("event.data 全体:", event.data);
     console.log("data の値:", data);
 
+    loadMultiRoMap().then(multiRo => {
     let current = {
-      currentQuestionIndex : 0,
-      currentQuestionRomaji : "",
-      currentTypedRomaji : "",
-      questions : data,
-    };
+        multiRo,
+        currentQuestionIndex : 0,
+        currentQuestionRomaji : "",
+        currentTypedRomaji : "",
+        questions : data,
+      };
 
     let score_calculation = {
       startTime : 0,
@@ -23,11 +25,10 @@ window.addEventListener("DOMContentLoaded", () => {
       totalMistakes : 0,
       keyMistakes : {},
     }
-
-
     // DOM要素
     let dom_data = {
-      elQuestion : document.getElementById("question"),
+      elQuestionName : document.getElementById("question-name"),
+      elQuestionKana : document.getElementById("question-kana"),
       elTyped : document.getElementById("typed"),
       elRemaining : document.getElementById("remaining"),
       elTypingInput: document.getElementById("typingInput"),
@@ -36,9 +37,6 @@ window.addEventListener("DOMContentLoaded", () => {
     console.log("dom_data:", dom_data);
     console.log("elQuestion:", dom_data.elQuestion);
     startGame(data, current, dom_data, score_calculation)
+    });
   });
 });
-
-
-
-
