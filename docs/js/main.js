@@ -1,5 +1,6 @@
 import { shuffleArray, onSearchTypeChange, makeYears, records_anime, records_voiceactor, records_character, kanaToRomajiArray } from "./data_select.js";
 
+let gameWindow = null
 // #選択画面
 document.addEventListener("DOMContentLoaded", () => {
   localStorage.removeItem("selectedType");
@@ -57,7 +58,7 @@ document.getElementById("isstart").addEventListener("click", () => {
     console.log("選択：", selectedType)
     console.log("ソースデータ：", sourceData)
     console.log("問題数：", problem_number)
-    const gameWindow = window.open("../html/game.html", "GameWindow", "width=800,height=600");
+    gameWindow = window.open("../html/game.html", "GameWindow", "width=800,height=600");
 
     gameWindow.onload = () => {
       gameWindow.postMessage(

@@ -40,3 +40,7 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
+
+document.getElementById("backButton").addEventListener("click", () => {
+  window.close(); // ✅ 自分自身を閉じる
+});
